@@ -1,6 +1,6 @@
 {
   "name": "webcheck-robots",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "description": "A plugin for Robots Exclusion Standard for webcheck",
   "main": "webcheck-robots.js",
   "directories": {
