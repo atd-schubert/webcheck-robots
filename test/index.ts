@@ -1,39 +1,38 @@
-/*jslint node:true*/
+/// <reference path="../typings/main.d.ts" />
 
-/*global describe, it, before, after, beforeEach, afterEach*/
+import { RobotsPlugin } from '../webcheck-robots';
+import { Webcheck, ICrawlOptions } from 'webcheck';
+import * as freeport from 'freeport';
+import * as express from 'express';
 
-'use strict';
+/* tslint:disable:align */
 
-var RobotsPlugin = require('../');
+describe('Robots Plugin', (): void => {
+    var portWithRobots: number,
+        portWithoutRobots: number;
 
-var Webcheck = require('webcheck');
-var freeport = require('freeport');
-var express = require('express');
+    before((done: MochaDone): void => {
+        var app: express.Application = express();
 
-describe('Robots Plugin', function () {
-    var portWithRobots, portWithoutRobots;
-    before(function (done) {
-        var app = express();
-
-        /*jslint unparam: true*/
-        app.get('/', function (req, res) {
+        app.get('/', (req: express.Request, res: express.Response): void => {
             res.send('<html><head></head><body><p>index</p></body></html>');
         });
-        app.get('/private/index.html', function (req, res) {
+        app.get('/private/index.html', (req: express.Request, res: express.Response): void => {
             res.send('<html><head></head><body><p>private</p></body></html>');
         });
-        app.get('/private/allowed', function (req, res) {
+        app.get('/private/allowed', (req: express.Request, res: express.Response): void => {
             res.send('<html><head></head><body><p>private but allowed</p></body></html>');
         });
-        app.get('/public/index.html', function (req, res) {
+        app.get('/public/index.html', (req: express.Request, res: express.Response): void => {
             res.send('<html><head></head><body><p>private</p></body></html>');
         });
-        app.get('/robots.txt', function (req, res) {
+        app.get('/robots.txt', (req: express.Request, res: express.Response): void => {
+            /* tslint:disable:max-line-length */
             res.set('Content-Type', 'text/plain').send('User-Agent: Delay\nCrawl-delay: 1\n\nUser-Agent: Test\nDisallow: /private\nAllow: /private/allowed\n\nUser-Agent: DisallowAll\nDisallow: /\n\nUser-Agent: *\nDisallow: /private');
+            /* tslint:disable:max-line-length */
         });
-        /*jslint unparam: false*/
 
-        freeport(function (err, p) {
+        freeport((err: Error, p: number): void => {
             if (err) {
                 done(err);
             }
@@ -42,52 +41,51 @@ describe('Robots Plugin', function () {
 
             app = express();
 
-            /*jslint unparam: true*/
-            app.get('/', function (req, res) {
+            app.get('/', (req: express.Request, res: express.Response): void => {
                 res.send('<html><head></head><body><p>index</p></body></html>');
             });
-            app.get('/private/index.html', function (req, res) {
+            app.get('/private/index.html', (req: express.Request, res: express.Response): void => {
                 res.send('<html><head></head><body><p>private</p></body></html>');
             });
-            app.get('/private/allowed', function (req, res) {
+            app.get('/private/allowed', (req: express.Request, res: express.Response): void => {
                 res.send('<html><head></head><body><p>private but allowed</p></body></html>');
             });
-            app.get('/public/index.html', function (req, res) {
+            app.get('/public/index.html', (req: express.Request, res: express.Response): void => {
                 res.send('<html><head></head><body><p>private</p></body></html>');
             });
-            /*jslint unparam: false*/
-            freeport(function (err, p) {
-                if (err) {
-                    done(err);
+            freeport((err2: Error, p2: number): void => {
+                if (err2) {
+                    done(err2);
                 }
-                portWithoutRobots = p;
+                portWithoutRobots = p2;
                 app.listen(portWithoutRobots);
 
                 done();
             });
         });
     });
-    describe('With robots', function () {
-        var webcheck, plugin;
+    describe('With robots', (): void => {
+        var webcheck: Webcheck,
+            plugin: RobotsPlugin;
 
-        before(function () {
-            webcheck = new Webcheck();
+        before((): void => {
+            webcheck = new Webcheck({});
             plugin = new RobotsPlugin({});
             webcheck.addPlugin(plugin);
             plugin.enable();
         });
 
-        it('should allow public resources', function (done) {
-            var allowed;
+        it('should allow public resources', (done: MochaDone): void => {
+            var allowed: boolean;
 
-            webcheck.on('request', function (settings) {
+            webcheck.on('request', (settings: ICrawlOptions): void => {
                 if (settings.url === 'http://localhost:' + portWithRobots + '/public/index.html') {
                     allowed = true;
                 }
             });
             webcheck.crawl({
                 url: 'http://localhost:' + portWithRobots + '/public/index.html'
-            }, function (err) {
+            }, (err: Error): void => {
                 webcheck.removeAllListeners('request');
                 if (err) {
                     return done(err);
@@ -98,17 +96,17 @@ describe('Robots Plugin', function () {
                 return done(new Error('Public resource was not allowed'));
             });
         });
-        it('should disallow private resources', function (done) {
-            var allowed;
+        it('should disallow private resources', (done: MochaDone): void => {
+            var allowed: boolean;
 
-            webcheck.on('request', function (settings) {
+            webcheck.on('request', (settings: ICrawlOptions): void => {
                 if (settings.url === 'http://localhost:' + portWithRobots + '/private/index.html') {
                     allowed = true;
                 }
             });
             webcheck.crawl({
                 url: 'http://localhost:' + portWithRobots + '/private/index.html'
-            }, function (err) {
+            }, (err: Error): void => {
                 webcheck.removeAllListeners('request');
                 if (err) {
                     return done(err);
@@ -120,27 +118,28 @@ describe('Robots Plugin', function () {
             });
         });
     });
-    describe('Without robots', function () {
-        var webcheck, plugin;
+    describe('Without robots', (): void => {
+        var webcheck: Webcheck,
+            plugin: RobotsPlugin;
 
-        before(function () {
-            webcheck = new Webcheck();
+        before((): void => {
+            webcheck = new Webcheck({});
             plugin = new RobotsPlugin({});
             webcheck.addPlugin(plugin);
             plugin.enable();
         });
 
-        it('should allow public resources', function (done) {
-            var allowed;
+        it('should allow public resources', (done: MochaDone): void => {
+            var allowed: boolean;
 
-            webcheck.on('request', function (settings) {
+            webcheck.on('request', (settings: ICrawlOptions): void => {
                 if (settings.url === 'http://localhost:' + portWithoutRobots + '/public/index.html') {
                     allowed = true;
                 }
             });
             webcheck.crawl({
                 url: 'http://localhost:' + portWithoutRobots + '/public/index.html'
-            }, function (err) {
+            }, (err: Error): void => {
                 webcheck.removeAllListeners('request');
                 if (err) {
                     return done(err);
@@ -151,17 +150,17 @@ describe('Robots Plugin', function () {
                 return done(new Error('Public resource was not allowed'));
             });
         });
-        it('should disallow private resources', function (done) {
-            var allowed;
+        it('should disallow private resources', (done: MochaDone): void => {
+            var allowed: boolean;
 
-            webcheck.on('request', function (settings) {
+            webcheck.on('request', (settings: ICrawlOptions): void => {
                 if (settings.url === 'http://localhost:' + portWithoutRobots + '/private/index.html') {
                     allowed = true;
                 }
             });
             webcheck.crawl({
                 url: 'http://localhost:' + portWithoutRobots + '/private/index.html'
-            }, function (err) {
+            }, (err: Error): void => {
                 webcheck.removeAllListeners('request');
                 if (err) {
                     return done(err);
@@ -173,10 +172,11 @@ describe('Robots Plugin', function () {
             });
         });
     });
-    describe('With specified User-Agent', function () {
-        var webcheck, plugin;
-        before(function () {
-            webcheck = new Webcheck();
+    describe('With specified User-Agent', (): void => {
+        var webcheck: Webcheck,
+            plugin: RobotsPlugin;
+        before((): void => {
+            webcheck = new Webcheck({});
             plugin = new RobotsPlugin({
                 userAgent: 'Test'
             });
@@ -184,17 +184,17 @@ describe('Robots Plugin', function () {
             plugin.enable();
         });
 
-        it('should allow public resources', function (done) {
-            var allowed;
+        it('should allow public resources', (done: MochaDone): void => {
+            var allowed: boolean;
 
-            webcheck.on('request', function (settings) {
+            webcheck.on('request', (settings: ICrawlOptions): void => {
                 if (settings.url === 'http://localhost:' + portWithRobots + '/public/index.html') {
                     allowed = true;
                 }
             });
             webcheck.crawl({
                 url: 'http://localhost:' + portWithRobots + '/public/index.html'
-            }, function (err) {
+            }, (err: Error): void => {
                 webcheck.removeAllListeners('request');
                 if (err) {
                     return done(err);
@@ -205,17 +205,17 @@ describe('Robots Plugin', function () {
                 return done(new Error('Public resource was not allowed'));
             });
         });
-        it('should disallow private resources', function (done) {
-            var allowed;
+        it('should disallow private resources', (done: MochaDone): void => {
+            var allowed: boolean;
 
-            webcheck.on('request', function (settings) {
+            webcheck.on('request', (settings: ICrawlOptions): void => {
                 if (settings.url === 'http://localhost:' + portWithRobots + '/private/index.html') {
                     allowed = true;
                 }
             });
             webcheck.crawl({
                 url: 'http://localhost:' + portWithRobots + '/private/index.html'
-            }, function (err) {
+            }, (err: Error): void => {
                 webcheck.removeAllListeners('request');
                 if (err) {
                     return done(err);
@@ -226,17 +226,17 @@ describe('Robots Plugin', function () {
                 return done();
             });
         });
-        it('should allow public resources within private scope', function (done) {
-            var allowed;
+        it('should allow public resources within private scope', (done: MochaDone): void => {
+            var allowed: boolean;
 
-            webcheck.on('request', function (settings) {
+            webcheck.on('request', (settings: ICrawlOptions): void => {
                 if (settings.url === 'http://localhost:' + portWithRobots + '/private/allowed') {
                     allowed = true;
                 }
             });
             webcheck.crawl({
                 url: 'http://localhost:' + portWithRobots + '/private/allowed'
-            }, function (err) {
+            }, (err: Error): void => {
                 webcheck.removeAllListeners('request');
                 if (err) {
                     return done(err);
@@ -248,36 +248,37 @@ describe('Robots Plugin', function () {
             });
         });
     });
-    describe('Respect the delay', function () {
-        var webcheck, plugin;
-        before(function () {
-            webcheck = new Webcheck();
+    describe('Respect the delay', (): void => {
+        var webcheck: Webcheck,
+            plugin: RobotsPlugin;
+        before((): void => {
+            webcheck = new Webcheck({});
             plugin = new RobotsPlugin({
                 userAgent: 'Delay'
             });
             webcheck.addPlugin(plugin);
             plugin.enable();
         });
-        it('do not have to respect the delay on first crawl', function (done) {
+        it('do not have to respect the delay on first crawl', (done: MochaDone): void => {
             webcheck.crawl({
                 url: 'http://localhost:' + portWithRobots + '/public/index.html'
-            }, function (err) {
+            }, (err: Error): void => {
                 if (err) {
                     return done(err);
                 }
                 return done();
             });
         });
-        it('should respect delay', function (done) {
-            var delayed;
-            webcheck.on('wait', function (settings) {
+        it('should respect delay', (done: MochaDone): void => {
+            var delayed: boolean;
+            webcheck.on('wait', (settings: ICrawlOptions): void => {
                 if (settings.url === 'http://localhost:' + portWithRobots + '/public/index.html') {
                     delayed = true;
                 }
             });
             webcheck.crawl({
                 url: 'http://localhost:' + portWithRobots + '/public/index.html'
-            }, function (err) {
+            }, (err: Error): void => {
                 webcheck.removeAllListeners('wait');
                 if (err) {
                     return done(err);

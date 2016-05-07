@@ -7,7 +7,7 @@
     "test": "test"
   },
   "dependencies": {
-    "webcheck": "^1.0.0",
+    "webcheck": "^1.1.0",
     "wildcard": "^1.1.2"
   },
   "devDependencies": {
@@ -15,7 +15,10 @@
     "freeport": "^1.0.5"
   },
   "scripts": {
-    "test": "mocha"
+    "test": "mocha",
+    "tsc": "tsc",
+    "tsc:w": "tsc -w",
+    "prepublish": "tsc; ts-npm-lint --fix-typings"
   },
   "repository": {
     "type": "git",
